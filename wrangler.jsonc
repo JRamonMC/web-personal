@@ -1,0 +1,11 @@
+// Despliegue en Cloudflare Workers (sitio estático).
+// Cloudflare ejecuta `npm run build` y después `npx wrangler deploy`, que sube dist/.
+// "name" tiene que coincidir con el nombre del proyecto en Cloudflare.
+{
+  "name": "web-personal",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "404-page"
+  }
+}
