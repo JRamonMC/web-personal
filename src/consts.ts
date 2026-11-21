@@ -5,8 +5,7 @@ export const SITE = {
   role: 'Engineering Manager',
   company: 'Letmino AI',
   location: 'Murcia, Spain',
-  // 'TBD' hasta comprar el dominio propio. Al poner el email real, vuelven los enlaces mailto.
-  email: 'TBD',
+  email: 'hello@joseramonmcm.com',
   linkedin: 'https://www.linkedin.com/in/jose-ramon-martinez-carbonell-martin/',
   linkedinHandle: 'in/jose-ramon-martinez-carbonell-martin',
   github: 'https://github.com/JRamonMC',
