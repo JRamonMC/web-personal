@@ -1,0 +1,251 @@
+---
+// Gráfico de flujo acumulado de la carrera.
+// Ratón: pasa por encima para ver cada año. Táctil: toca o arrastra.
+// La lista de abajo hace de leyenda y de lectura: toca una banda para resaltarla.
+import { BAND_KEYS, BAND_COLORS, YEARS } from '../data/career';
+import type { HomeCopy } from '../i18n/home';
+
+interface Props {
+  copy: HomeCopy['flow'];
+}
+const { copy } = Astro.props;
+
+const W = 1000;
+const H = 300;
+const xs = YEARS.map((_, i) => (i * W) / (YEARS.length - 1));
+const curve = (pts: number[][]) => {
+  let d = `M${pts[0][0]},${pts[0][1]}`;
+  for (let i = 1; i < pts.length; i++) {
+    const [x0, y0] = pts[i - 1];
+    const [x1, y1] = pts[i];
+    const mx = (x0 + x1) / 2;
+    d += ` C${mx},${y0} ${mx},${y1} ${x1},${y1}`;
+  }
+  return d;
+};
+let acc = YEARS.map(() => 0);
+const areas = BAND_KEYS.map((key) => {
+  const lower = acc.map((a, i) => [xs[i], H - (a / 100) * H]);
+  acc = acc.map((a, i) => a + YEARS[i][key]);
+  const upper = acc.map((a, i) => [xs[i], H - (a / 100) * H]);
+  const bottomRev = curve([...lower].reverse()).replace(/^M/, 'L');
+  return { key, color: BAND_COLORS[key], d: `${curve(upper)} ${bottomRev} Z` };
+});
+
+const last = YEARS.length - 1;
+const data = YEARS.map((y) => ({ ...y, note: copy.yearNotes[y.y] ?? '' }));
+---
+<figure class="flow" data-years={JSON.stringify(data)} data-active="">
+  <figcaption class="flow-head">
+    <div>
+      <p class="flow-kicker">{copy.kicker}</p>
+      <h2 id="flow-title">{copy.h2}</h2>
+    </div>
+    <p class="flow-note">{copy.note}</p>
+  </figcaption>
+
+  <div class="chart">
+    <div class="plot">
+      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" role="img" aria-label={copy.aria}>
+        {areas.map((a) => <path d={a.d} fill={a.color} data-band={a.key} class="band" />)}
+        {xs.map((x, i) => i > 0 && i < last && <line x1={x} x2={x} y1="0" y2={H} class="grid" />)}
+        <line class="marker" x1={xs[last]} x2={xs[last]} y1="0" y2={H} />
+      </svg>
+    </div>
+    <ol class="years" aria-label={copy.pick}>
+      {YEARS.map((y, i) => (
+        <li>
+          <button type="button" class="yr" data-i={i} aria-pressed={i === last ? 'true' : 'false'}>
+            <span class="yr-long">{y.y}</span><span class="yr-short" aria-hidden="true">’{String(y.y).slice(2)}</span>
+          </button>
+        </li>
+      ))}
+    </ol>
+  </div>
+
+  <div class="readout">
+    <p class="readout-head" aria-live="polite">
+      <strong class="r-year">{YEARS[last].y}</strong><span class="r-note">{data[last].note && ` · ${data[last].note}`}</span>
+    </p>
+    <ul class="legend">
+      {BAND_KEYS.map((key) => (
+        <li>
+          <button type="button" class="leg" data-band={key} aria-pressed="false" title={`${copy.legendHint}: ${copy.bands[key]}`}>
+            <span class="sw" style={`background:${BAND_COLORS[key]}`}></span>
+            <span class="leg-name">{copy.bands[key]}</span>
+            <span class="bar" aria-hidden="true"><span style={`width:${YEARS[last][key]}%;background:${BAND_COLORS[key]}`}></span></span>
+            <span class="pct">{YEARS[last][key]}%</span>
+          </button>
+        </li>
+      ))}
+    </ul>
+  </div>
+</figure>
+
+<script>
+  type Y = { y: number; note: string } & Record<string, number>;
+  document.querySelectorAll<HTMLElement>('.flow').forEach((fig) => {
+    const years: Y[] = JSON.parse(fig.dataset.years || '[]');
+    const n = years.length;
+    const plot = fig.querySelector<HTMLElement>('.plot')!;
+    const marker = fig.querySelector<SVGLineElement>('.marker')!;
+    const yearBtns = [...fig.querySelectorAll<HTMLButtonElement>('.yr')];
+    const legBtns = [...fig.querySelectorAll<HTMLButtonElement>('.leg')];
+    const rYear = fig.querySelector('.r-year')!;
+    const rNote = fig.querySelector('.r-note')!;
+    let current = n - 1;
+    let pinned = ''; // banda fijada con un toque
+
+    const select = (i: number) => {
+      i = Math.max(0, Math.min(n - 1, i));
+      if (i === current) return;
+      current = i;
+      const y = years[i];
+      const x = String((i * 1000) / (n - 1));
+      marker.setAttribute('x1', x);
+      marker.setAttribute('x2', x);
+      yearBtns.forEach((b, j) => b.setAttribute('aria-pressed', String(j === i)));
+      rYear.textContent = String(y.y);
+      rNote.textContent = y.note ? ` · ${y.note}` : '';
+      legBtns.forEach((b) => {
+        const v = y[b.dataset.band!] ?? 0;
+        b.querySelector<HTMLElement>('.bar span')!.style.width = `${v}%`;
+        b.querySelector('.pct')!.textContent = `${v}%`;
+      });
+    };
+    const setActive = (k: string) => fig.setAttribute('data-active', k);
+
+    // Seleccionar año según la posición horizontal en el gráfico.
+    const fromPointer = (e: PointerEvent) => {
+      const r = plot.getBoundingClientRect();
+      select(Math.round(((e.clientX - r.left) / r.width) * (n - 1)));
+    };
+    let dragging = false;
+    plot.addEventListener('pointerdown', (e) => { dragging = true; fromPointer(e); });
+    plot.addEventListener('pointermove', (e) => { if (dragging || e.pointerType === 'mouse') fromPointer(e); });
+    window.addEventListener('pointerup', () => { dragging = false; });
+    window.addEventListener('pointercancel', () => { dragging = false; });
+
+    yearBtns.forEach((b) => b.addEventListener('click', () => select(Number(b.dataset.i))));
+    fig.querySelector('.years')!.addEventListener('keydown', (e) => {
+      const k = (e as KeyboardEvent).key;
+      if (k !== 'ArrowLeft' && k !== 'ArrowRight') return;
+      e.preventDefault();
+      select(current + (k === 'ArrowRight' ? 1 : -1));
+      yearBtns[current].focus();
+    });
+
+    // Bandas: un toque fija el resaltado; otro toque lo quita. Con ratón, hover.
+    legBtns.forEach((b) => {
+      const k = b.dataset.band!;
+      b.addEventListener('click', () => {
+        pinned = pinned === k ? '' : k;
+        legBtns.forEach((o) => o.setAttribute('aria-pressed', String(o.dataset.band === pinned)));
+        setActive(pinned);
+      });
+      b.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') setActive(k); });
+      b.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') setActive(pinned); });
+    });
+    fig.querySelectorAll<SVGPathElement>('.band').forEach((p) => {
+      p.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') setActive(p.dataset.band!); });
+      p.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') setActive(pinned); });
+    });
+  });
+</script>
+
+<style>
+  .flow {
+    margin: 0;
+    background: var(--panel);
+    color: var(--on-blue);
+    padding: 24px 16px 18px;
+    border-radius: 4px 32px 4px 4px;
+  }
+  @media (min-width: 720px) { .flow { padding: 40px 40px 28px; border-radius: 4px 40px 4px 4px; } }
+  .flow-head { display: grid; gap: 12px; margin-bottom: 24px; }
+  @media (min-width: 760px) { .flow-head { grid-template-columns: 1fr 320px; align-items: end; margin-bottom: 28px; } }
+  .flow-kicker { margin: 0 0 6px; font-family: var(--display); font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: var(--lemon); }
+  .flow-head h2 { margin: 0; font-size: clamp(1.9rem, 1.3rem + 2vw, 2.8rem); }
+  .flow-note { margin: 0; color: var(--on-blue-2); font-size: 0.98rem; font-style: italic; }
+
+  .plot { touch-action: pan-y; cursor: crosshair; -webkit-tap-highlight-color: transparent; }
+  .plot svg { display: block; width: 100%; height: clamp(180px, 26vw, 300px); }
+  .band { transition: opacity 0.2s ease; }
+  .grid { stroke: var(--panel); stroke-width: 1; vector-effect: non-scaling-stroke; opacity: 0.35; }
+  .marker { stroke: #0d0f30; stroke-width: 3; vector-effect: non-scaling-stroke; }
+
+  .flow:not([data-active='']) .band { opacity: 0.22; }
+  .flow[data-active='code'] .band[data-band='code'],
+  .flow[data-active='data'] .band[data-band='data'],
+  .flow[data-active='platform'] .band[data-band='platform'],
+  .flow[data-active='teach'] .band[data-band='teach'],
+  .flow[data-active='people'] .band[data-band='people'] { opacity: 1; }
+
+  .years {
+    list-style: none;
+    margin: 6px 0 0;
+    padding: 0;
+    display: flex;
+    justify-content: space-between;
+  }
+  .years li { display: flex; justify-content: center; width: 0; }
+  .years li:first-child { justify-content: flex-start; }
+  .years li:last-child { justify-content: flex-end; }
+  .yr {
+    font-family: var(--display);
+    font-size: 0.75rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--on-blue-2);
+    background: transparent;
+    border: 0;
+    border-radius: 999px;
+    padding: 8px 4px;
+    min-height: 36px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .yr[aria-pressed='true'] { background: var(--lemon); color: var(--lemon-ink); padding: 8px 8px; }
+  .yr-short { display: none; }
+  @media (max-width: 640px) {
+    .yr-long { display: none; }
+    .yr-short { display: inline; }
+  }
+
+  .readout {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid color-mix(in srgb, var(--on-blue) 25%, transparent);
+  }
+  .readout-head { margin: 0 0 10px; font-family: var(--display); font-size: 1rem; }
+  .readout-head strong { font-size: 1.25rem; letter-spacing: -0.02em; }
+  .r-note { color: var(--on-blue-2); }
+  .legend { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+  @media (min-width: 760px) { .legend { grid-template-columns: repeat(2, 1fr); column-gap: 32px; } }
+  .leg {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 14px minmax(0, 1fr) 72px 40px;
+    align-items: center;
+    gap: 10px;
+    min-height: 40px;
+    padding: 4px 8px;
+    margin: 0 -8px;
+    width: calc(100% + 16px);
+    background: transparent;
+    border: 0;
+    border-radius: 8px;
+    color: inherit;
+    font-family: var(--display);
+    font-size: 0.9rem;
+    text-align: left;
+    cursor: pointer;
+  }
+  .leg:hover, .leg[aria-pressed='true'] { background: color-mix(in srgb, var(--on-blue) 12%, transparent); }
+  .leg[aria-pressed='true'] .leg-name { font-weight: 650; }
+  .sw { width: 14px; height: 14px; border-radius: 3px; }
+  .leg-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bar { height: 6px; border-radius: 3px; background: color-mix(in srgb, var(--on-blue) 15%, transparent); overflow: hidden; }
+  .bar span { display: block; height: 100%; border-radius: 3px; transition: width 0.25s ease; }
+  .pct { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+</style>

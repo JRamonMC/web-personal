@@ -1,0 +1,65 @@
+---
+// Banderas para cambiar de idioma. Solo se muestran los otros dos idiomas
+// y cada una lleva a la misma página en ese idioma.
+import { LANGS, LANG_NAME, HTML_LANG, swapLang, type Lang } from '../i18n';
+import { ui } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const others = LANGS.filter((l) => l !== lang);
+const path = Astro.url.pathname;
+---
+<ul class="langs" aria-label={ui(lang).switchTo}>
+  {others.map((l) => (
+    <li>
+      <a href={swapLang(path, l)} hreflang={HTML_LANG[l]} lang={HTML_LANG[l]} title={LANG_NAME[l]} aria-label={LANG_NAME[l]} class="flag">
+        {l === 'en' && (
+          <svg viewBox="0 0 60 60" aria-hidden="true">
+            <rect width="60" height="60" fill="#012169" />
+            <path d="M0 0L60 60M60 0L0 60" stroke="#fff" stroke-width="12" />
+            <path d="M0 0L60 60M60 0L0 60" stroke="#C8102E" stroke-width="5" />
+            <path d="M30 0V60M0 30H60" stroke="#fff" stroke-width="18" />
+            <path d="M30 0V60M0 30H60" stroke="#C8102E" stroke-width="10" />
+          </svg>
+        )}
+        {l === 'es' && (
+          <svg viewBox="0 0 60 60" aria-hidden="true">
+            <rect width="60" height="60" fill="#AA151B" />
+            <rect y="15" width="60" height="30" fill="#F1BF00" />
+            <rect x="15" y="24" width="8" height="12" rx="1.5" fill="#AA151B" opacity="0.85" />
+          </svg>
+        )}
+        {l === 'mur' && (
+          <svg viewBox="0 0 60 60" aria-hidden="true">
+            <rect width="60" height="60" fill="#9B1B30" />
+            {/* Cuatro castillos arriba a la izquierda (2×2) */}
+            {[[11, 13], [23, 13], [11, 25], [23, 25]].map(([x, y]) => (
+              <path transform={`translate(${x} ${y})`} fill="#F1BF00" d="M0 9V2h2v2h2V2h2v2h2V2h2v7z" />
+            ))}
+            {/* Siete coronas abajo a la derecha (2-2-2-1) */}
+            {[[36, 31], [46, 31], [36, 39], [46, 39], [36, 47], [46, 47], [41, 55]].map(([x, y]) => (
+              <path transform={`translate(${x - 4} ${y - 3})`} fill="#F1BF00" d="M0 5L.8 0l2 2.5L4 0l1.2 2.5 2-2.5L8 5z" />
+            ))}
+          </svg>
+        )}
+      </a>
+    </li>
+  ))}
+</ul>
+<style>
+  .langs { list-style: none; margin: 0; padding: 0; display: flex; gap: 8px; }
+  .flag {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1.5px solid var(--ink);
+    overflow: hidden;
+    transition: transform 0.15s ease;
+  }
+  .flag:hover { transform: translateY(-2px); }
+  .flag svg { width: 100%; height: 100%; display: block; }
+</style>

@@ -1,23 +1,29 @@
 ---
-import Base from '../../layouts/Base.astro';
-import { getCollection } from 'astro:content';
-const base = import.meta.env.BASE_URL.replace(/\/$/, '');
-const recipes = (await getCollection('recipes')).sort((a, b) => a.data.order - b.data.order);
+import Base from '../../../layouts/Base.astro';
+import { langPaths, localize, type Lang } from '../../../i18n';
+import { ui } from '../../../i18n/ui';
+import { recipesFor } from '../../../i18n/content';
+
+export const getStaticPaths = langPaths;
+const { lang } = Astro.props as { lang: Lang };
+const u = ui(lang);
+const t = u.recipes;
+const recipes = await recipesFor(lang);
 ---
-<Base title="Recipes" description="Things I like to cook.">
+<Base lang={lang} title={t.title} description={t.description}>
   <section class="section wrap">
     <div class="section-head">
-      <span class="section-num">Off the clock · Recipes</span>
-      <h2>From my kitchen.</h2>
-      <p class="section-lead">Cooking is where I switch off from work and still get to iterate. Most of these started as something from home in Murcia and got tweaked over many weekends.</p>
+      <span class="section-num">{t.kicker}</span>
+      <h2>{t.h2}</h2>
+      <p class="section-lead">{t.lead}</p>
     </div>
     <div class="grid">
       {recipes.map((r) => (
-        <a class="card recipe" href={`${base}/recipes/${r.id}/`}>
+        <a class="card recipe" href={localize(lang, `/recipes/${r.slug}/`)}>
           <span class="tag">{r.data.tag}</span>
           <h3>{r.data.title}</h3>
           <p>{r.data.summary}</p>
-          <span class="mono">{r.data.time} · serves {r.data.serves}</span>
+          <span class="mono">{r.data.time} · {u.serves(r.data.serves)}</span>
         </a>
       ))}
     </div>

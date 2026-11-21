@@ -21,7 +21,8 @@ const reading = defineCollection({
     author: z.string(),
     kind: z.enum(['book', 'article']),
     url: z.string().url().optional(),
-    note: z.string(),
+    // Nota en cada idioma.
+    note: z.object({ en: z.string(), es: z.string(), mur: z.string() }),
     current: z.boolean().default(false),
   }),
 });

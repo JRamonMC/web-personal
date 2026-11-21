@@ -1,42 +1,48 @@
 ---
-import Base from '../layouts/Base.astro';
+import Base from '../../layouts/Base.astro';
 import { getCollection } from 'astro:content';
+import { langPaths, type Lang } from '../../i18n';
+import { ui } from '../../i18n/ui';
+
+export const getStaticPaths = langPaths;
+const { lang } = Astro.props as { lang: Lang };
+const t = ui(lang).reading;
 const all = await getCollection('reading');
 const current = all.filter((r) => r.data.current);
 const books = all.filter((r) => r.data.kind === 'book' && !r.data.current);
 const articles = all.filter((r) => r.data.kind === 'article');
 ---
-<Base title="Reading" description="Books and articles that shaped how I lead.">
+<Base lang={lang} title={t.title} description={t.description}>
   <section class="section wrap">
     <div class="section-head">
-      <span class="section-num">Off the clock · Reading</span>
-      <h2>Books and articles that stuck.</h2>
-      <p class="section-lead">Not a list of everything I’ve read. Just the ones I still think about, with a line on why.</p>
+      <span class="section-num">{t.kicker}</span>
+      <h2>{t.h2}</h2>
+      <p class="section-lead">{t.lead}</p>
     </div>
 
     {current.length > 0 && (
       <div class="current card">
-        <span class="mono label">Reading now</span>
+        <span class="mono label">{t.now}</span>
         {current.map((b) => (
           <div>
             <p class="title">{b.data.title} <span class="mono">· {b.data.author}</span></p>
-            <p class="note">{b.data.note}</p>
+            <p class="note">{b.data.note[lang]}</p>
           </div>
         ))}
       </div>
     )}
 
-    <h3 class="mono group">Books</h3>
+    <h3 class="mono group">{t.books}</h3>
     <ul class="list">
       {books.map((b) => (
         <li>
           <div class="who"><span class="title">{b.data.title}</span><span class="mono">{b.data.author}</span></div>
-          <p class="note">{b.data.note}</p>
+          <p class="note">{b.data.note[lang]}</p>
         </li>
       ))}
     </ul>
 
-    <h3 class="mono group">Articles</h3>
+    <h3 class="mono group">{t.articles}</h3>
     <ul class="list">
       {articles.map((a) => (
         <li>
@@ -44,7 +50,7 @@ const articles = all.filter((r) => r.data.kind === 'article');
             {a.data.url ? <a class="title link" href={a.data.url} target="_blank" rel="noopener">{a.data.title} ↗</a> : <span class="title">{a.data.title}</span>}
             <span class="mono">{a.data.author}</span>
           </div>
-          <p class="note">{a.data.note}</p>
+          <p class="note">{a.data.note[lang]}</p>
         </li>
       ))}
     </ul>

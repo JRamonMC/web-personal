@@ -1,25 +1,34 @@
 ---
 import '../styles/global.css';
 import { SITE } from '../consts';
+import LangSwitch from '../components/LangSwitch.astro';
+import { HTML_LANG, LANGS, DEFAULT_LANG, localize, swapLang, type Lang } from '../i18n';
+import { ui } from '../i18n/ui';
 
 interface Props {
+  lang: Lang;
   title?: string;
   description?: string;
 }
-const { title, description = SITE.description } = Astro.props;
-const fullTitle = title ? `${title} · ${SITE.name}` : `${SITE.name} · ${SITE.role}`;
+const { lang } = Astro.props;
+const t = ui(lang);
+const { title, description = t.description } = Astro.props;
+const fullTitle = title ? `${title} · ${SITE.name}` : `${SITE.name} · ${t.role}`;
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 const path = Astro.url.pathname;
 const hasEmail = SITE.email !== 'TBD';
 const nav = [
-  { href: `${base}/#work`, label: 'Work' },
-  { href: `${base}/#manual`, label: 'Working with me' },
-  { href: `${base}/reading/`, label: 'Reading' },
-  { href: `${base}/recipes/`, label: 'Recipes' },
+  { href: localize(lang, '/#work'), label: t.nav.work },
+  { href: localize(lang, '/#manual'), label: t.nav.manual },
+  { href: localize(lang, '/reading/'), label: t.nav.reading },
+  { href: localize(lang, '/recipes/'), label: t.nav.recipes },
 ];
+// Enlaces alternativos para buscadores (el murciano comparte código con el español, así que no se anuncia).
+const site = Astro.site?.origin ?? '';
+const alternates = LANGS.filter((l) => l !== 'mur').map((l) => ({ hreflang: HTML_LANG[l], href: site + swapLang(path, l) }));
 ---
 <!doctype html>
-<html lang="en">
+<html lang={HTML_LANG[lang]}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -30,6 +39,8 @@ const nav = [
     <meta name="theme-color" content="#f1f0ea" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#090b24" media="(prefers-color-scheme: dark)" />
     <link rel="icon" href={`${base}/favicon.svg`} type="image/svg+xml" />
+    {alternates.map((a) => <link rel="alternate" hreflang={a.hreflang} href={a.href} />)}
+    <link rel="alternate" hreflang="x-default" href={site + swapLang(path, DEFAULT_LANG)} />
     <script is:inline>
       try {
         const t = localStorage.getItem('theme');
@@ -38,9 +49,9 @@ const nav = [
     </script>
   </head>
   <body>
-    <a class="skip" href="#content">Skip to content</a>
+    <a class="skip" href="#content">{t.skip}</a>
     <header class="top wrap">
-      <a href={`${base}/`} class="brand" aria-label="Home">
+      <a href={localize(lang, '/')} class="brand" aria-label={t.home}>
         <span class="brand-mark" aria-hidden="true">JR</span>
         <span class="brand-name">José Ramón<br />Martínez</span>
       </a>
@@ -50,10 +61,11 @@ const nav = [
         ))}
       </nav>
       <div class="top-tools">
-        <span class="label clock" aria-label="Local time in Murcia">
-          Murcia (Spain) <time id="clock">--:--</time>
+        <span class="label clock" aria-label={t.clockLabel}>
+          {t.clock} <time id="clock">--:--</time>
         </span>
-        <button class="theme" type="button" aria-label="Toggle dark mode" title="Toggle theme">
+        <LangSwitch lang={lang} />
+        <button class="theme" type="button" aria-label={t.theme} title={t.theme}>
           <span class="theme-dot" aria-hidden="true"></span>
         </button>
       </div>
@@ -65,12 +77,12 @@ const nav = [
 
     <footer class="foot">
       <div class="wrap">
-        <p class="label foot-kicker">Open to interesting conversations</p>
-        <a class="foot-big" href={hasEmail ? `mailto:${SITE.email}` : SITE.linkedin}>Let’s talk<span aria-hidden="true">.</span></a>
+        <p class="label foot-kicker">{t.footKicker}</p>
+        <a class="foot-big" href={hasEmail ? `mailto:${SITE.email}` : SITE.linkedin}>{t.footCta}<span aria-hidden="true">{t.footCta.endsWith('?') ? '' : '.'}</span></a>
         <div class="foot-grid">
           <p class="foot-who">
             {SITE.name}<br />
-            <span>{SITE.role} at {SITE.company}. Based in {SITE.location}, working remotely.</span>
+            <span>{t.footWho(t.role, SITE.company, t.location)}</span>
           </p>
           <ul class="contacts">
             <li><a href={SITE.linkedin} rel="me noopener" target="_blank">LinkedIn ↗</a></li>
@@ -78,7 +90,7 @@ const nav = [
             {hasEmail && <li><a href={`mailto:${SITE.email}`}>Email ↗</a></li>}
           </ul>
         </div>
-        <p class="label signoff">© {new Date().getFullYear()} · Made in Murcia, between lemons and pull requests.</p>
+        <p class="label signoff">© {new Date().getFullYear()} · {t.signoff}</p>
       </div>
     </footer>
 
@@ -177,10 +189,22 @@ const nav = [
   }
 
   @media (max-width: 860px) {
-    .top { grid-template-columns: 1fr auto; row-gap: 14px; }
-    nav { grid-column: 1 / -1; grid-row: 2; justify-content: flex-start; margin-left: -12px; }
+    .top { grid-template-columns: 1fr auto; row-gap: 10px; padding-top: 16px; padding-bottom: 12px; }
+    nav {
+      grid-column: 1 / -1;
+      grid-row: 2;
+      justify-content: flex-start;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: none;
+      margin: 0 -16px;
+      padding: 0 4px;
+    }
+    nav::-webkit-scrollbar { display: none; }
+    .navlink { flex: none; padding: 10px 12px; }
+    .top-tools { gap: 8px; }
   }
-  @media (max-width: 420px) {
+  @media (max-width: 560px) {
     .clock { display: none; }
   }
 
@@ -194,9 +218,11 @@ const nav = [
   .foot-kicker { margin: 0 0 8px; text-transform: uppercase; letter-spacing: 0.12em; }
   .foot-big {
     display: inline-block;
+    max-width: 100%;
+    overflow-wrap: anywhere;
     font-family: var(--display);
     font-weight: 700;
-    font-size: clamp(3.6rem, 2rem + 9vw, 9rem);
+    font-size: clamp(3rem, 1.6rem + 9vw, 9rem);
     letter-spacing: -0.055em;
     line-height: 0.95;
     text-decoration: none;

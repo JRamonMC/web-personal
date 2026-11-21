@@ -10,17 +10,23 @@ npm run dev      # http://localhost:4321
 npm run build    # genera dist/
 ```
 
+## Idiomas
+
+Inglés en `/` (por defecto), español en `/es/` y murciano en `/mur/`. Las banderas de la cabecera llevan a la misma página en otro idioma.
+
 ## Dónde se edita cada cosa
 
 | Qué | Archivo |
 |---|---|
-| Nombre, email, enlaces | `src/consts.ts` |
-| Textos de la home (Now, impacto, IA, principios, trayectoria) | `src/pages/index.astro` (arrays al principio del archivo) |
-| Recetas | `src/content/recipes/*.md` (un archivo por receta) |
-| Libros y artículos | `src/content/reading.json` |
+| Nombre, empresa, email, enlaces | `src/consts.ts` |
+| Textos de la home en los 3 idiomas | `src/i18n/home.ts` |
+| Menú, pie, cargo, ubicación y textos de lecturas/recetas | `src/i18n/ui.ts` |
+| Porcentajes del gráfico de carrera | `src/data/career.ts` |
+| Recetas | `src/content/recipes/<en\|es\|mur>/*.md` (mismo nombre de archivo en cada idioma) |
+| Libros y artículos (nota en cada idioma) | `src/content/reading.json` |
 | Colores y tipografía | `src/styles/global.css` |
 
-Para añadir una receta, copia un `.md` de `src/content/recipes/`, cambia el nombre del archivo y el contenido. `featured: true` la muestra en la home.
+Para añadir una receta, crea el `.md` en las tres carpetas con el mismo nombre de archivo. `featured: true` la muestra en la home.
 
 ## Publicar
 
