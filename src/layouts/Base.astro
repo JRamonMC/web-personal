@@ -1,0 +1,231 @@
+---
+import '../styles/global.css';
+import { SITE } from '../consts';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+const { title, description = SITE.description } = Astro.props;
+const fullTitle = title ? `${title} · ${SITE.name}` : `${SITE.name} · ${SITE.role}`;
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const path = Astro.url.pathname;
+const hasEmail = SITE.email !== 'TBD';
+const nav = [
+  { href: `${base}/#work`, label: 'Work' },
+  { href: `${base}/#manual`, label: 'Working with me' },
+  { href: `${base}/reading/`, label: 'Reading' },
+  { href: `${base}/recipes/`, label: 'Recipes' },
+];
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta name="theme-color" content="#f1f0ea" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#090b24" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" href={`${base}/favicon.svg`} type="image/svg+xml" />
+    <script is:inline>
+      try {
+        const t = localStorage.getItem('theme');
+        if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <a class="skip" href="#content">Skip to content</a>
+    <header class="top wrap">
+      <a href={`${base}/`} class="brand" aria-label="Home">
+        <span class="brand-mark" aria-hidden="true">JR</span>
+        <span class="brand-name">José Ramón<br />Martínez</span>
+      </a>
+      <nav aria-label="Main">
+        {nav.map((n) => (
+          <a href={n.href} class:list={['navlink', { active: !n.href.includes('#') && path.startsWith(n.href) }]}>{n.label}</a>
+        ))}
+      </nav>
+      <div class="top-tools">
+        <span class="label clock" aria-label="Local time in Murcia">
+          Murcia (Spain) <time id="clock">--:--</time>
+        </span>
+        <button class="theme" type="button" aria-label="Toggle dark mode" title="Toggle theme">
+          <span class="theme-dot" aria-hidden="true"></span>
+        </button>
+      </div>
+    </header>
+
+    <main id="content">
+      <slot />
+    </main>
+
+    <footer class="foot">
+      <div class="wrap">
+        <p class="label foot-kicker">Open to interesting conversations</p>
+        <a class="foot-big" href={hasEmail ? `mailto:${SITE.email}` : SITE.linkedin}>Let’s talk<span aria-hidden="true">.</span></a>
+        <div class="foot-grid">
+          <p class="foot-who">
+            {SITE.name}<br />
+            <span>{SITE.role} at {SITE.company}. Based in {SITE.location}, working remotely.</span>
+          </p>
+          <ul class="contacts">
+            <li><a href={SITE.linkedin} rel="me noopener" target="_blank">LinkedIn ↗</a></li>
+            <li><a href={SITE.github} rel="me noopener" target="_blank">GitHub ↗</a></li>
+            {hasEmail && <li><a href={`mailto:${SITE.email}`}>Email ↗</a></li>}
+          </ul>
+        </div>
+        <p class="label signoff">© {new Date().getFullYear()} · Made in Murcia, between lemons and pull requests.</p>
+      </div>
+    </footer>
+
+    <script is:inline>
+      (function () {
+        const btn = document.querySelector('.theme');
+        const root = document.documentElement;
+        const isDark = () =>
+          root.dataset.theme === 'dark' ||
+          (!root.dataset.theme && matchMedia('(prefers-color-scheme: dark)').matches);
+        btn.addEventListener('click', function () {
+          const next = isDark() ? 'light' : 'dark';
+          root.dataset.theme = next;
+          try { localStorage.setItem('theme', next); } catch (e) {}
+        });
+        const clock = document.getElementById('clock');
+        const fmt = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Madrid' });
+        const tick = () => { clock.textContent = fmt.format(new Date()); };
+        tick();
+        setInterval(tick, 30000);
+      })();
+    </script>
+  </body>
+</html>
+
+<style>
+  .top {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 24px;
+    padding-top: 22px;
+    padding-bottom: 22px;
+    position: relative;
+    z-index: 2;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+  .brand-mark {
+    width: 42px;
+    height: 42px;
+    display: grid;
+    place-items: center;
+    background: var(--panel);
+    color: var(--lemon);
+    font-family: var(--display);
+    font-weight: 750;
+    font-size: 0.95rem;
+    letter-spacing: -0.02em;
+    border-radius: 50% 50% 50% 0;
+    transition: border-radius 0.3s ease;
+  }
+  .brand:hover .brand-mark { border-radius: 0 50% 50% 50%; }
+  .brand-name {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 0.86rem;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+  }
+  nav { display: flex; justify-content: center; gap: 4px; flex-wrap: wrap; }
+  .navlink {
+    font-family: var(--display);
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-decoration: none;
+    padding: 6px 12px;
+    border-radius: 999px;
+    color: var(--ink-2);
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .navlink:hover, .navlink.active { background: var(--ink); color: var(--bg); }
+  .top-tools { display: flex; align-items: center; gap: 14px; }
+  .clock time { color: var(--ink); font-weight: 600; }
+  .theme {
+    width: 36px;
+    height: 36px;
+    border: 1.5px solid var(--ink);
+    border-radius: 50%;
+    background: transparent;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    padding: 0;
+  }
+  .theme-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: linear-gradient(90deg, var(--ink) 50%, var(--lemon) 50%);
+    border: 1.5px solid var(--ink);
+    transition: transform 0.4s ease;
+  }
+  :global(:root[data-theme='dark']) .theme-dot { transform: rotate(180deg); }
+  @media (prefers-color-scheme: dark) {
+    :global(:root:not([data-theme='light'])) .theme-dot { transform: rotate(180deg); }
+  }
+
+  @media (max-width: 860px) {
+    .top { grid-template-columns: 1fr auto; row-gap: 14px; }
+    nav { grid-column: 1 / -1; grid-row: 2; justify-content: flex-start; margin-left: -12px; }
+  }
+  @media (max-width: 420px) {
+    .clock { display: none; }
+  }
+
+  .foot {
+    margin-top: 120px;
+    padding: 72px 0 36px;
+    background: var(--panel);
+    color: var(--on-blue);
+  }
+  .foot .label { color: var(--on-blue-2); }
+  .foot-kicker { margin: 0 0 8px; text-transform: uppercase; letter-spacing: 0.12em; }
+  .foot-big {
+    display: inline-block;
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: clamp(3.6rem, 2rem + 9vw, 9rem);
+    letter-spacing: -0.055em;
+    line-height: 0.95;
+    text-decoration: none;
+    color: var(--on-blue);
+    transition: color 0.2s ease;
+  }
+  .foot-big span { color: var(--lemon); }
+  .foot-big:hover { color: var(--lemon); }
+  .foot-grid {
+    display: grid;
+    gap: 24px;
+    margin-top: 48px;
+    padding-top: 24px;
+    border-top: 1.5px solid color-mix(in srgb, var(--on-blue) 30%, transparent);
+  }
+  @media (min-width: 760px) { .foot-grid { grid-template-columns: 1fr auto; align-items: start; } }
+  .foot-who { margin: 0; font-family: var(--display); font-weight: 600; font-size: 1.1rem; }
+  .foot-who span { font-family: var(--serif); font-weight: 400; color: var(--on-blue-2); font-size: 1rem; }
+  .contacts { list-style: none; margin: 0; padding: 0; display: flex; gap: 10px; flex-wrap: wrap; }
+  .contacts a {
+    font-family: var(--display);
+    font-weight: 500;
+    font-size: 0.92rem;
+    text-decoration: none;
+    padding: 8px 14px;
+    border: 1.5px solid var(--on-blue);
+    border-radius: 999px;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .contacts a:hover { background: var(--lemon); color: var(--lemon-ink); border-color: var(--lemon); }
+  .signoff { margin: 40px 0 0; }
+</style>

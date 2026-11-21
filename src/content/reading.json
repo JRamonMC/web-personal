@@ -1,0 +1,9 @@
+[
+  {"id": "elegant-puzzle", "title": "An Elegant Puzzle", "author": "Will Larson", "kind": "book", "current": true, "note": "Started it in 2026. It’s from the past, but it’s still useful today."},
+  {"id": "managers-path", "title": "The Manager's Path", "author": "Camille Fournier", "kind": "book", "note": "Not my favourite. It felt quite typical."},
+  {"id": "accelerate", "title": "Accelerate", "author": "Nicole Forsgren, Jez Humble, Gene Kim", "kind": "book", "note": "A must. Psychological safety is key for successful teams. Hoping the second edition arrives soon."},
+  {"id": "team-topologies", "title": "Team Topologies", "author": "Matthew Skelton, Manuel Pais", "kind": "book", "note": "When you need to think about how to structure a team, there’s useful advice here."},
+  {"id": "radical-candor", "title": "Radical Candor", "author": "Kim Scott", "kind": "book", "note": "The basics are good, but only part of the book was useful to me."},
+  {"id": "building-effective-agents", "title": "Building effective agents", "author": "Anthropic", "kind": "article", "url": "https://www.anthropic.com/engineering/building-effective-agents", "note": "A good reminder that simple beats clever. Start with the smallest thing that works and only add agents when it pays off."},
+  {"id": "maker-schedule", "title": "Maker's Schedule, Manager's Schedule", "author": "Paul Graham", "kind": "article", "url": "https://paulgraham.com/makersschedule.html", "note": "Old, but still true. One meeting in the middle of the afternoon can break a whole day of deep work."}
+]

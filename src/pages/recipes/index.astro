@@ -1,0 +1,34 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getCollection } from 'astro:content';
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const recipes = (await getCollection('recipes')).sort((a, b) => a.data.order - b.data.order);
+---
+<Base title="Recipes" description="Things I like to cook.">
+  <section class="section wrap">
+    <div class="section-head">
+      <span class="section-num">Off the clock · Recipes</span>
+      <h2>From my kitchen.</h2>
+      <p class="section-lead">Cooking is where I switch off from work and still get to iterate. Most of these started as something from home in Murcia and got tweaked over many weekends.</p>
+    </div>
+    <div class="grid">
+      {recipes.map((r) => (
+        <a class="card recipe" href={`${base}/recipes/${r.id}/`}>
+          <span class="tag">{r.data.tag}</span>
+          <h3>{r.data.title}</h3>
+          <p>{r.data.summary}</p>
+          <span class="mono">{r.data.time} · serves {r.data.serves}</span>
+        </a>
+      ))}
+    </div>
+  </section>
+</Base>
+<style>
+  .grid { display: grid; gap: 16px; }
+  @media (min-width: 640px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 960px) { .grid { grid-template-columns: repeat(3, 1fr); } }
+  .recipe { padding: 22px; display: flex; flex-direction: column; gap: 8px; }
+  .recipe .tag { align-self: flex-start; }
+  .recipe h3 { margin: 4px 0 0; font-size: 1.15rem; font-weight: 600; }
+  .recipe p { margin: 0; color: var(--ink-2); flex: 1; font-size: 0.95rem; }
+</style>

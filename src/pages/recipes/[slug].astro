@@ -1,0 +1,41 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getCollection, render } from 'astro:content';
+
+export async function getStaticPaths() {
+  const recipes = await getCollection('recipes');
+  return recipes.map((r) => ({ params: { slug: r.id }, props: { recipe: r } }));
+}
+const { recipe } = Astro.props;
+const { Content } = await render(recipe);
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+<Base title={recipe.data.title} description={recipe.data.summary}>
+  <article class="wrap recipe">
+    <a class="link mono back" href={`${base}/recipes/`}>← All recipes</a>
+    <header>
+      <span class="tag">{recipe.data.tag}</span>
+      <h1>{recipe.data.title}</h1>
+      <p class="lead">{recipe.data.summary}</p>
+      <p class="mono meta">{recipe.data.time} · serves {recipe.data.serves}</p>
+    </header>
+    <div class="body card">
+      <Content />
+    </div>
+  </article>
+</Base>
+<style>
+  .recipe { max-width: 760px; padding-top: 48px; }
+  .back { display: inline-block; margin-bottom: 28px; }
+  h1 { font-size: clamp(2.2rem, 1.5rem + 3vw, 3.4rem); letter-spacing: -0.035em; line-height: 1.05; margin: 12px 0 12px; }
+  .lead { font-size: 1.15rem; color: var(--ink-2); margin: 0 0 6px; }
+  .meta { margin: 0 0 28px; }
+  .body { padding: 8px 28px 24px; }
+  .body :global(h2) { font-family: var(--display); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--blue); margin: 28px 0 10px; font-weight: 500; }
+  .body :global(ul), .body :global(ol) { padding-left: 1.2em; margin: 0; }
+  .body :global(li) { margin: 6px 0; }
+  .body :global(li::marker) { color: var(--blue); }
+  .body :global(blockquote) { margin: 16px 0 0; padding: 8px 14px; border-left: 2px solid var(--blue); background: var(--bg-2); border-radius: 0 8px 8px 0; font-size: 0.9rem; }
+  .body :global(blockquote p) { margin: 0; }
+  @media (max-width: 560px) { .body { padding: 4px 18px 20px; } }
+</style>

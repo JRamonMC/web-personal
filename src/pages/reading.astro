@@ -1,0 +1,64 @@
+---
+import Base from '../layouts/Base.astro';
+import { getCollection } from 'astro:content';
+const all = await getCollection('reading');
+const current = all.filter((r) => r.data.current);
+const books = all.filter((r) => r.data.kind === 'book' && !r.data.current);
+const articles = all.filter((r) => r.data.kind === 'article');
+---
+<Base title="Reading" description="Books and articles that shaped how I lead.">
+  <section class="section wrap">
+    <div class="section-head">
+      <span class="section-num">Off the clock · Reading</span>
+      <h2>Books and articles that stuck.</h2>
+      <p class="section-lead">Not a list of everything I’ve read. Just the ones I still think about, with a line on why.</p>
+    </div>
+
+    {current.length > 0 && (
+      <div class="current card">
+        <span class="mono label">Reading now</span>
+        {current.map((b) => (
+          <div>
+            <p class="title">{b.data.title} <span class="mono">· {b.data.author}</span></p>
+            <p class="note">{b.data.note}</p>
+          </div>
+        ))}
+      </div>
+    )}
+
+    <h3 class="mono group">Books</h3>
+    <ul class="list">
+      {books.map((b) => (
+        <li>
+          <div class="who"><span class="title">{b.data.title}</span><span class="mono">{b.data.author}</span></div>
+          <p class="note">{b.data.note}</p>
+        </li>
+      ))}
+    </ul>
+
+    <h3 class="mono group">Articles</h3>
+    <ul class="list">
+      {articles.map((a) => (
+        <li>
+          <div class="who">
+            {a.data.url ? <a class="title link" href={a.data.url} target="_blank" rel="noopener">{a.data.title} ↗</a> : <span class="title">{a.data.title}</span>}
+            <span class="mono">{a.data.author}</span>
+          </div>
+          <p class="note">{a.data.note}</p>
+        </li>
+      ))}
+    </ul>
+  </section>
+</Base>
+<style>
+  .current { padding: 20px 22px; margin-bottom: 40px; border-color: var(--blue); }
+  .label { color: var(--blue); text-transform: uppercase; letter-spacing: 0.08em; }
+  .group { text-transform: uppercase; letter-spacing: 0.08em; color: var(--blue); margin: 32px 0 6px; }
+  .list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+  .list li { display: grid; gap: 4px 32px; padding: 16px 0; border-bottom: 1px solid var(--line); }
+  @media (min-width: 760px) { .list li { grid-template-columns: 340px 1fr; } }
+  .who { display: grid; gap: 2px; }
+  .title { font-weight: 600; font-style: italic; }
+  .note { margin: 0; color: var(--ink-2); }
+  .current .title { margin: 8px 0 4px; }
+</style>
